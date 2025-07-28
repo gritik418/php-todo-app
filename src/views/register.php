@@ -1,3 +1,38 @@
+<?php
+
+if ($_SERVER['REQUEST_METHOD'] == "POST") {
+    $name = $_POST['name'];
+    $email = $_POST["email"];
+    $username = $_POST["username"];
+    $user_password = $_POST["password"];
+    $confirmPassword = $_POST["confirm_password"];
+
+    if ($user_password != $confirmPassword) {
+        $error = "Passwords not match.";
+    }
+
+    require_once __DIR__ . "/../config/database.php";
+
+    $statement = $conn->prepare("INSERT INTO users (name, email, password, username) VALUES (:name, :email, :password, :username)");
+    $statement->bindParam(":name", $name);
+    $statement->bindParam(":email", $email);
+    $statement->bindParam(":password", $user_password);
+    $statement->bindParam(":username", $username);
+
+    if ($statement->execute()) {
+        header("Location: /login");
+        exit;
+    } else {
+        $error = "Registration failed.";
+    }
+
+
+    print_r($user);
+}
+
+?>
+
+
 <div class="flex justify-center min-h-[70vh] py-20 px-4">
     <div class="w-full max-w-md bg-white shadow-lg rounded-2xl p-8 space-y-6">
         <div class="text-center">
@@ -5,7 +40,7 @@
             <p class="text-sm text-gray-500">Sign up to get started</p>
         </div>
 
-        <form action="/register" method="POST" class="space-y-4">
+        <form action="" method="POST" class="space-y-4">
             <div>
                 <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
                 <input
@@ -24,6 +59,17 @@
                     name="email"
                     id="email"
                     placeholder="example@abc.com"
+                    required
+                    class="w-full px-4 py-2 mt-1 border border-[#d54390] rounded-lg bg-gray-50 text-gray-900 focus:border-[#d54390] focus:ring-2 focus:ring-[#d54390] focus:outline-none" />
+            </div>
+
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                <input
+                    type="text"
+                    name="username"
+                    id="username"
+                    placeholder="@john"
                     required
                     class="w-full px-4 py-2 mt-1 border border-[#d54390] rounded-lg bg-gray-50 text-gray-900 focus:border-[#d54390] focus:ring-2 focus:ring-[#d54390] focus:outline-none" />
             </div>
