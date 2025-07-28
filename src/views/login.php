@@ -2,6 +2,15 @@
 // Initialize
 $error = null;
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (isset($_SESSION['user_id'])) {
+    header("Location: /profile");
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $email = $_POST["email"];
     $password = $_POST["password"];
@@ -17,7 +26,6 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     if ($user) {
 
         if ($password == $user['password']) {
-            session_start();
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_email'] = $user['email'];
 

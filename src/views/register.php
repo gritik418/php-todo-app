@@ -1,37 +1,57 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (isset($_SESSION['user_id'])) {
+    header("Location: /profile");
+    exit;
+}
+
+$error = "";
+
+$name = $_POST['name'] ?? '';
+$email = $_POST['email'] ?? '';
+$username = $_POST['username'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
-    $name = $_POST['name'];
-    $email = $_POST["email"];
-    $username = $_POST["username"];
     $user_password = $_POST["password"];
     $confirmPassword = $_POST["confirm_password"];
 
-    if ($user_password != $confirmPassword) {
-        $error = "Passwords not match.";
-    }
-
-    require_once __DIR__ . "/../config/database.php";
-
-    $statement = $conn->prepare("INSERT INTO users (name, email, password, username) VALUES (:name, :email, :password, :username)");
-    $statement->bindParam(":name", $name);
-    $statement->bindParam(":email", $email);
-    $statement->bindParam(":password", $user_password);
-    $statement->bindParam(":username", $username);
-
-    if ($statement->execute()) {
-        header("Location: /login");
-        exit;
+    if ($user_password !== $confirmPassword) {
+        $error = "Passwords do not match.";
     } else {
-        $error = "Registration failed.";
+        require_once __DIR__ . "/../config/database.php";
+
+        $checkEmail = $conn->prepare("SELECT id FROM users WHERE email = ?");
+        $checkEmail->execute([$email]);
+        $existingUser = $checkEmail->fetch(PDO::FETCH_ASSOC);
+
+        $checkUsername = $conn->prepare("SELECT id FROM users WHERE username = ?");
+        $checkUsername->execute([$username]);
+        $existingUsername = $checkUsername->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingUser) {
+            $error = "Email already exists.";
+        } else if ($existingUsername) {
+            $error = "Username already exists.";
+        } else {
+            $statement = $conn->prepare("INSERT INTO users (name, email, password, username) VALUES (:name, :email, :password, :username)");
+            $statement->bindParam(":name", $name);
+            $statement->bindParam(":email", $email);
+            $statement->bindParam(":password", $user_password); // plain text
+            $statement->bindParam(":username", $username);
+
+            if ($statement->execute()) {
+                header("Location: /login");
+                exit;
+            } else {
+                $error = "Registration failed. Please try again.";
+            }
+        }
     }
-
-
-    print_r($user);
 }
-
 ?>
-
 
 <div class="flex justify-center min-h-[70vh] py-20 px-4">
     <div class="w-full max-w-md bg-white shadow-lg rounded-2xl p-8 space-y-6">
@@ -39,6 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
             <h2 class="text-2xl font-bold text-gray-800">Create an Account</h2>
             <p class="text-sm text-gray-500">Sign up to get started</p>
         </div>
+
+        <?php if (!empty($error)): ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm text-center">
+                <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
 
         <form action="" method="POST" class="space-y-4">
             <div>
@@ -49,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     id="name"
                     placeholder="John Doe"
                     required
+                    value="<?= htmlspecialchars($name) ?>"
                     class="w-full px-4 py-2 mt-1 border border-[#d54390] rounded-lg bg-gray-50 text-gray-900 focus:border-[#d54390] focus:ring-2 focus:ring-[#d54390] focus:outline-none" />
             </div>
 
@@ -60,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     id="email"
                     placeholder="example@abc.com"
                     required
+                    value="<?= htmlspecialchars($email) ?>"
                     class="w-full px-4 py-2 mt-1 border border-[#d54390] rounded-lg bg-gray-50 text-gray-900 focus:border-[#d54390] focus:ring-2 focus:ring-[#d54390] focus:outline-none" />
             </div>
 
@@ -71,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     id="username"
                     placeholder="@john"
                     required
+                    value="<?= htmlspecialchars($username) ?>"
                     class="w-full px-4 py-2 mt-1 border border-[#d54390] rounded-lg bg-gray-50 text-gray-900 focus:border-[#d54390] focus:ring-2 focus:ring-[#d54390] focus:outline-none" />
             </div>
 

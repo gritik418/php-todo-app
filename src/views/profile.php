@@ -1,23 +1,33 @@
 <?php
 require_once __DIR__ . "/../config/database.php";
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if ($_SERVER['REQUEST_METHOD'] === "POST") {
+    session_destroy();
+    header("Location: /login");
+    exit;
+}
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: /login");
+    exit;
+}
+
 
 $userId =  $_SESSION['user_id'];
 
-if ($userId) {
-    $statement = $conn->prepare("SELECT * FROM users where id = ?");
-    $statement->bindParam(1, $userId);
-    $statement->execute();
+$statement = $conn->prepare("SELECT * FROM users where id = ?");
+$statement->bindParam(1, $userId);
+$statement->execute();
 
-    $user = $statement->fetch();
-    if (!$user['id']) {
-        header("Location: /login");
-    }
-} else {
+$user = $statement->fetch();
+
+if (!$user || !$user['id']) {
     header("Location: /login");
+    exit;
 }
-
 
 ?>
 
@@ -45,5 +55,12 @@ if ($userId) {
             </div>
         </div>
 
+        <!-- Action Button -->
+        <form action="" method="POST" class="mt-6 text-center">
+            <button type="submit"
+                class="px-6 cursor-pointer py-2 bg-[#bc2a77] hover:bg-[#d54390] text-white rounded-lg transition">
+                Logout
+            </button>
+        </form>
     </div>
 </div>
